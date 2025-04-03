@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Cloud Generator</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.5/d3.layout.cloud.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        svg {
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        .disclaimer {
+            color: red;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Word Cloud Generator</h1>
+    <textarea id="textInput" rows="5" cols="50" placeholder="Enter your paragraph here..."></textarea>
+    <br>
+    <button onclick="generateWordCloud()">Generate Word Cloud</button>
+    <p class="disclaimer">Disclaimer: The word cloud may contain sensitive or inappropriate words based on input.</p>
+    <div id="wordCloud"></div>
+
+    <script>
+        function generateWordCloud() {
+            let text = document.getElementById("textInput").value.toLowerCase();
+            let words = text.split(/\W+/g).filter(word => word.length > 1);
+            let wordCounts = {};
+
+            words.forEach(word => {
+                wordCounts[word] = (wordCounts[word] || 0) + 1;
+            });
+
+            let wordArray = Object.keys(wordCounts)
+                .map(word => ({ text: word, size: 10 + wordCounts[word] * 5 }))
+                .sort((a, b) => b.size - a.size)
+                .slice(0, 100); // Limit to top 100 frequent words
+
+            d3.select("#wordCloud").selectAll("svg").remove();
+
+            let width = 600, height = 400;
+
+            let layout = d3.layout.cloud()
+                .size([width, height])
+                .words(wordArray)
+                .padding(5)
+                .rotate(() => (Math.random() > 0.5 ? 0 : 90))
+                .font("Impact")
+                .fontSize(d => d.size)
+                .on("end", draw);
+
+            layout.start();
+
+            function draw(words) {
+                d3.select("#wordCloud").append("svg")
+                    .attr("width", width)
+                    .attr("height", height)
+                    .append("g")
+                    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")")
+                    .selectAll("text")
+                    .data(words)
+                    .enter().append("text")
+                    .style("font-family", "Impact")
+                    .style("fill", () => d3.schemeCategory10[Math.floor(Math.random() * 10)])
+                    .attr("text-anchor", "middle")
+                    .attr("transform", d => "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")")
+                    .style("font-size", d => d.size + "px")
+                    .text(d => d.text);
+            }
+        }
+    </script>
+</body>
+</html>
